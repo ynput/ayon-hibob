@@ -1,3 +1,8 @@
 name = "hibob"
 title = "HiBob"
 version = "1.0.0"
+
+ayon_required_addons = {
+    "ftrack": ">1.1.4"
+}
+ayon_compatible_addons = {}
