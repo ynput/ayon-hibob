@@ -7,10 +7,12 @@ from ayon_server.settings.enum import secrets_enum
 
 class ServiceCredentialsModel(BaseSettingsModel):
     hibob_user: str = SettingsField(
+        "",
         enum_resolver=secrets_enum,
         title="HiBob Service User"
     )
     hibob_api: str = SettingsField(
+        "",
         enum_resolver=secrets_enum,
         title="HiBob Service API key"
     )
@@ -40,9 +42,10 @@ class HiBobSettings(BaseSettingsModel):
     service_credentials: ServiceCredentialsModel = SettingsField(
         default_factory=ServiceCredentialsModel,
         title="Service Credentials",
+        scope=["studio"],
     )
     ftrack_event_handlers: FtrackEventHandlersModel = SettingsField(
-        title="ftrack",
+        title="Ftrack actions",
         default_factory=FtrackEventHandlersModel,
     )
 
