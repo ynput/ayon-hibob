@@ -268,7 +268,6 @@ def main(
 
     log.info("Start creating package")
 
-
     # Skip server zipping
     if not skip_zip:
         create_server_package(output_dir, log)
