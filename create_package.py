@@ -239,6 +239,8 @@ def create_server_package(output_dir: str, log: logging.Logger):
     output_path = os.path.join(
         output_dir, f"{ADDON_NAME}-{ADDON_VERSION}.zip"
     )
+    os.makedirs(output_dir, exist_ok=True)
+
     with ZipFileLongPaths(
         output_path, "w", zipfile.ZIP_DEFLATED
     ) as zipf:
