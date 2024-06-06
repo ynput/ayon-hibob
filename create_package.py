@@ -40,7 +40,13 @@ FTRACK_EVENT_HANDLERS_FILENAME = "hibob_event_handlers.tar.gz"
 
 CURRENT_DIR: str = os.path.dirname(os.path.abspath(__file__))
 SERVER_DIR: str = os.path.join(CURRENT_DIR, "server")
+PUBLIC_DIR : str = os.path.join(CURRENT_DIR, "public")
 FTRACK_HANDLERS_DIR: str = os.path.join(CURRENT_DIR, "ftrack_event_handlers")
+
+CLIENT_VERSION_CONTENT = f'''# -*- coding: utf-8 -*-
+"""Package declaring HiBob addon version."""
+__version__ = "{ADDON_VERSION}"
+'''
 
 # Patterns of directories to be skipped for server part of addon
 IGNORE_DIR_PATTERNS: list[Pattern] = [
@@ -166,6 +172,11 @@ def _get_server_files_mapping() -> list[tuple[str, str]]:
             (path, os.path.join("server", sub_path))
         )
 
+    for path, sub_path in find_files_in_subdir(PUBLIC_DIR):
+        filepaths_to_copy.append(
+            (path, os.path.join("public", sub_path))
+        )
+
     filepaths_to_copy.append(
         (os.path.join(CURRENT_DIR, "package.py"), "package.py")
     )
@@ -182,16 +193,21 @@ def _prepare_ftrack_tar_content() -> bytes:
     tar_content = io.BytesIO()
     with tarfile.open(fileobj=tar_content, mode="w:gz") as tar:
         for path, sub_path in find_files_in_subdir(FTRACK_HANDLERS_DIR):
-            tarinfo = tarfile.TarInfo(path)
+            tarinfo = tarfile.TarInfo(sub_path)
             tarinfo.mode = int("0777", base=8)
             with open(path, "rb") as f_stream:
                 # Go to the end to find out size
-                f_stream.seek(0, 2)
+                f_stream.seek(0, io.SEEK_END)
                 tarinfo.size = f_stream.tell()
-                tarinfo.name = sub_path
                 # Go back to start and store content to tar object
                 f_stream.seek(0)
                 tar.addfile(tarinfo, f_stream)
+
+        version_info = tarfile.TarInfo("lib/hibob_common/version.py")
+        version_info.mode = int("0777", base=8)
+        version_content = CLIENT_VERSION_CONTENT.encode()
+        version_info.size = len(version_content)
+        tar.addfile(version_info, io.BytesIO(version_content))
     return tar_content.getvalue()
 
 

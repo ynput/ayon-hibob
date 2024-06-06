@@ -7,7 +7,7 @@ import requests
 import arrow
 import ayon_api
 
-from hibob_common import HiBobServerAction
+from hibob_common import HiBobServerAction, get_hibob_icon_url
 
 
 FTRACK_EVENT_NAME_SUFFIX = "(HiBob)"
@@ -95,6 +95,7 @@ class SyncHiBobHolidaysAction(HiBobServerAction):
     identifier = "sync.hibob.holidays.server"
     label = "Sync HiBob Holidays"
     description = "Synchronize HiBob holidays with Ftrack"
+    icon = get_hibob_icon_url()
 
     settings_key = "SyncHiBobHolidaysAction"
 

@@ -1,4 +1,7 @@
+from ftrack_common import get_ftrack_public_url
 from ftrack_common.event_handlers import ServerAction
+
+from .version import __version__
 
 
 class HiBobServerAction(ServerAction):
@@ -39,3 +42,26 @@ class HiBobServerAction(ServerAction):
         if not self.roles_check(settings.get("role_list"), user_role_list):
             return False
         return True
+
+
+def get_hibob_icon_url(icon_name=None):
+    """Helper to get icon url to server.
+
+    The existence of file is not validated.
+
+    Args:
+        icon_name (str): Name of icon filename.
+
+    Returns:
+        str: Url to icon on server.
+
+    """
+    if icon_name is None:
+        icon_name = "HiBob.svg"
+
+    return get_ftrack_public_url(
+        "icons", icon_name,
+        addon_version=__version__,
+        addon_name="hibob",
+    )
+
