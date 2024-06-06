@@ -4,11 +4,11 @@ from ftrack_common.event_handlers import ServerAction
 class HiBobServerAction(ServerAction):
     """Overriden ftrack ServerAction loading settings from addon."""
 
-    settings_frack_subkey = "server_event_handlers"
+    settings_frack_subkey = "ftrack_event_handlers"
     addon_name = "hibob"
 
     def get_addon_settings(self, session, event, entities):
-        project_name = self.get_project_name_from_event(
+        project_name = self.get_project_name_from_event_with_entities(
             session, event, entities
         )
         project_settings = self.get_project_settings_from_event(
@@ -16,14 +16,8 @@ class HiBobServerAction(ServerAction):
         )
         return project_settings[self.addon_name]
 
-    def get_addon_ftrack_settings(self, session, event, entities):
-        addon_settings = self.get_addon_settings(session, event, entities)
-        return addon_settings["ftrack_event_handlers"]
-
     def get_my_settings(self, session, event, entities):
-        ftrack_settings = self.get_addon_ftrack_settings(
-            session, event, entities
-        )
+        ftrack_settings = self.get_addon_settings(session, event, entities)
         return (
             ftrack_settings
             [self.settings_frack_subkey]

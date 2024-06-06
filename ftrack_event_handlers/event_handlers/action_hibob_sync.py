@@ -279,8 +279,9 @@ class SyncHiBobHolidaysAction(HiBobServerAction):
 
     def get_hibob_credentials(self, session, event, entities):
         addon_settings = self.get_addon_settings(session, event, entities)
-        hibob_user = addon_settings["hibob_user"]
-        hibob_api = addon_settings["hibob_api"]
+        service_settings = addon_settings["service_credentials"]
+        hibob_user = service_settings["hibob_user"]
+        hibob_api = service_settings["hibob_api"]
         if not hibob_user or not hibob_api:
             return None, None
         secrets_by_name = {
