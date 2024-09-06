@@ -40,7 +40,7 @@ FTRACK_EVENT_HANDLERS_FILENAME = "hibob_event_handlers.tar.gz"
 
 CURRENT_DIR: str = os.path.dirname(os.path.abspath(__file__))
 SERVER_DIR: str = os.path.join(CURRENT_DIR, "server")
-PUBLIC_DIR : str = os.path.join(CURRENT_DIR, "public")
+PUBLIC_DIR: str = os.path.join(CURRENT_DIR, "public")
 FTRACK_HANDLERS_DIR: str = os.path.join(CURRENT_DIR, "ftrack_event_handlers")
 
 CLIENT_VERSION_CONTENT = f'''# -*- coding: utf-8 -*-
