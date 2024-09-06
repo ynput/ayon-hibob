@@ -1,6 +1,6 @@
 name = "hibob"
 title = "HiBob"
-version = "1.0.0-rc.1"
+version = "1.0.0"
 
 ayon_required_addons = {
     "ftrack": ">1.1.4"
