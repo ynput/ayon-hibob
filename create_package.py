@@ -191,9 +191,12 @@ def _prepare_ftrack_tar_content() -> bytes:
 
     """
     tar_content = io.BytesIO()
+    is_windows = platform.system().lower() == "windows"
     with tarfile.open(fileobj=tar_content, mode="w:gz") as tar:
         for path, sub_path in find_files_in_subdir(FTRACK_HANDLERS_DIR):
-            tarinfo = tarfile.TarInfo(sub_path.replace("\\", "/"))
+            if is_windows:
+                sub_path = sub_path.replace("\\", "/")
+            tarinfo = tarfile.TarInfo(sub_path)
             tarinfo.mode = int("0777", base=8)
             with open(path, "rb") as f_stream:
                 # Go to the end to find out size
