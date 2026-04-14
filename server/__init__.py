@@ -1,6 +1,6 @@
 from typing import Type
 
-from ayon_server.addons import BaseServerAddon, AddonLibrary
+from ayon_server.addons import BaseServerAddon
 
 from .settings import HiBobSettings, DEFAULT_VALUES
 
