@@ -1,0 +1,14 @@
+[project]
+name = "ayon-hibob-sync"
+version = "1.0.0"
+description = ""
+authors = [{name = "Ynput s.r.o.", email ="info@ynput.io"}]
+dependencies = [
+    "platformdirs",
+    "ayon-python-api==1.2.19",
+    "rquests==2.31.0",
+    "arrow",
+]
+
+[tool.setuptools]
+py-modules = ["ayon_sync"]
