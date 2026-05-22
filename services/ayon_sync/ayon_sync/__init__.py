@@ -1,4 +1,4 @@
-from .server import main
+from .service import main
 
 
 __all__ = (
