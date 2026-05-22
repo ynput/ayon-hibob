@@ -6,7 +6,7 @@ authors = [{name = "Ynput s.r.o.", email ="info@ynput.io"}]
 dependencies = [
     "platformdirs",
     "ayon-python-api==1.2.19",
-    "rquests==2.31.0",
+    "requests",
     "arrow",
 ]
 
