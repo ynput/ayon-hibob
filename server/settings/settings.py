@@ -20,14 +20,18 @@ class ServiceCredentialsModel(BaseSettingsModel):
 
 class SyncHiBobHolidaysActionModel(BaseSettingsModel):
     enabled: bool = SettingsField(True, title="Enabled")
-    ignored_policy_types: list[str] = SettingsField(
-        default_factory=list,
-        title="Ignored Policy Types",
-    )
     role_list: list[str] = SettingsField(
         default_factory=list,
         title="Roles",
     )
+
+
+class SyncConfigModel(BaseSettingsModel):
+    ignored_policy_types: list[str] = SettingsField(
+        default_factory=list,
+        title="Ignored Policy Types",
+    )
+
 
 
 class FtrackEventHandlersModel(BaseSettingsModel):
@@ -44,6 +48,10 @@ class HiBobSettings(BaseSettingsModel):
         title="Service Credentials",
         scope=["studio"],
     )
+    sync_config: SyncConfigModel = SettingsField(
+        default_factory=SyncConfigModel,
+        title="Sync Configuration",
+    )
     ftrack_event_handlers: FtrackEventHandlersModel = SettingsField(
         title="Ftrack actions",
         default_factory=FtrackEventHandlersModel,
@@ -51,10 +59,12 @@ class HiBobSettings(BaseSettingsModel):
 
 
 DEFAULT_VALUES = {
+    "sync_config": {
+        "ignored_policy_types": [],
+    },
     "ftrack_event_handlers": {
         "SyncHiBobHolidaysAction": {
             "enabled": True,
-            "ignored_polict_types": [],
             "role_list": [
                 "Administrator",
                 "Project Manager"
