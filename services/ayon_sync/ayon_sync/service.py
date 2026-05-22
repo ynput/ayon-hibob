@@ -16,7 +16,6 @@ from typing import Any
 import arrow
 import ayon_api
 import requests
-from Tools.scripts.objgraph import ignore
 
 from planner_api import (
     get_resources,
