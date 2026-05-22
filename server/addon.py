@@ -10,6 +10,8 @@ from .settings import (
 
 
 class HiBobAddon(BaseServerAddon):
+    addon_type = "server"
+
     settings_model: Type[HiBobSettings] = HiBobSettings
 
     async def get_default_settings(self):
