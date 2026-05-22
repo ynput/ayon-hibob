@@ -17,7 +17,7 @@ import arrow
 import ayon_api
 import requests
 
-from planner_api import (
+from .planner_api import (
     get_resources,
     get_booking_events,
     create_booking_event,
