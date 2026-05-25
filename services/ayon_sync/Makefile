@@ -6,10 +6,10 @@ ifeq ("$(wildcard $(ENVFILE))","")
    $(shell cp $(ENVFILE_EXAMPLE) $(ENVFILE))
 endif
 
-ADDON_VERSION=$(shell python -c "import os;import sys;content={};f=open('$(CURDIR)/../../package.py');exec(f.read(),content);f.close();print(content['version'])")
-BASE_NAME := ayon-hibob-sync
-IMAGE_VERSION := 1.0.0
-IMAGE := ynput/$(BASE_NAME):$(IMAGE_VERSION)
+ADDON_VERSION=$(shell python "$(CURDIR)/helper.py" addon-version)
+IMAGE=$(shell python "$(CURDIR)/helper.py" image)
+BASE_NAME := $(shell python "$(CURDIR)/helper.py" image-base)
+IMAGE_VERSION := $(shell python "$(CURDIR)/helper.py" image-version)
 BASH_CONTAINER_NAME := $(BASE_NAME)-bash-$(IMAGE_VERSION)
 
 build:
@@ -19,7 +19,7 @@ dist:
 	docker push $(IMAGE)
 
 clean:
-	docker rmi $(image)
+	docker rmi $(IMAGE)
 
 dev:
 	docker run --rm -ti \
@@ -29,7 +29,7 @@ dev:
 		--env AYON_SERVER_URL=${AYON_SERVER_URL} \
 		--env AYON_ADDON_NAME=hibob \
 		--env AYON_ADDON_VERSION=$(ADDON_VERSION) \
-		$(IMAGE) python -m processor
+		$(IMAGE) python -m ayon_sync
 
 bash:
 	docker run --name $(BASH_CONTAINER_NAME) --rm -it --entrypoint /bin/bash $(IMAGE)
