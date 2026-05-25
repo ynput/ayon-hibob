@@ -117,6 +117,7 @@ class PlannerAPI:
         return response.data["events"]
 
     def create_booking_event(
+        self,
         start_time: str,
         end_time: str,
         *,
