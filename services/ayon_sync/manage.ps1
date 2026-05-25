@@ -8,11 +8,8 @@ if ($ARGS.Length -gt 1) {
 $script_dir_rel = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
 $script_dir = (Get-Item $script_dir_rel).FullName
 
-$BASE_NAME = "ayon-hibob-sync"
-$IMAGE_NAME = "ynput/$($BASE_NAME)"
-$IMAGE_VERSION = "1.0.0"
-$ADDON_VERSION = Invoke-Expression -Command "python -c ""import os;import sys;content={};f=open(r'$($script_dir)/../../package.py');exec(f.read(),content);f.close();print(content['version'])"""
-$IMAGE_FULL_NAME = "$($IMAGE_NAME):$($IMAGE_VERSION)"
+$RESULT = Invoke-Expression -Command "python '$($script_dir)/helper.py' all"
+$IMAGE_FULL_NAME, $BASE_NAME, $IMAGE_VERSION, $ADDON_VERSION = $RESULT.split("|")
 $BASH_CONTAINER_NAME = "$($BASE_NAME)-bash-$($IMAGE_VERSION)"
 
 function defaultfunc {
