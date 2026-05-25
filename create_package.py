@@ -305,6 +305,8 @@ def main(
 
     log.info("Start creating package")
 
+    update_service_version()
+
     # Skip server zipping
     if not skip_zip:
         create_server_package(output_dir, log)
