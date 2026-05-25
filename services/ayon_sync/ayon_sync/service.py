@@ -368,8 +368,9 @@ def sync_holidays():
 
     planner_api = PlannerAPI(planner_version)
 
-    # TODO use settings to load ignored policy types
-    ignored_policy_types = []
+    ignored_policy_types = (
+        addon_settings["sync_config"]["ignored_policy_types"]
+    )
 
     hibob_holidays_by_email = get_hibob_holidays(
         hibob_user, hibob_api_key, ignored_policy_types
