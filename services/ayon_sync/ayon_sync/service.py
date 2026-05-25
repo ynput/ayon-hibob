@@ -371,6 +371,7 @@ def sync_holidays():
     ignored_policy_types = (
         addon_settings["sync_config"]["ignored_policy_types"]
     )
+    log.info("Preparing holidays from HiBob")
 
     hibob_holidays_by_email = get_hibob_holidays(
         hibob_user, hibob_api_key, ignored_policy_types
@@ -404,10 +405,14 @@ def sync_holidays():
         if email is not None:
             resource_id_by_email[email] = resource["id"]
 
+    log.info("Preparing holidays from AYON")
     ayon_holidays: dict[str, list[HolidayItem]] = get_ayon_holidays(
         resource_id_by_email, planner_api
     )
 
+    updated_counter = 0
+    created_counter = 0
+    removed_counter = 0
     for email, hibob_holidays in hibob_holidays_by_email.items():
         resource_id = resource_id_by_email.get(email)
         if not resource_id:
@@ -461,6 +466,7 @@ def sync_holidays():
                     update_holiday(
                         hibob_holiday, same_ayon_holiday, planner_api
                     )
+                    updated_counter += 1
                 same_ayon_holiday.set_processed()
 
             # Create new holiday item if none is intersecting
@@ -474,6 +480,7 @@ def sync_holidays():
                 )
                 ayon_user_holidays.append(ayon_holiday)
                 ayon_holiday.set_processed()
+                created_counter += 1
 
             # Update AYON holiday if there is only one intersecting
             #   and use first of intersecting holidays if there are more
@@ -487,6 +494,7 @@ def sync_holidays():
                 )
                 update_holiday(hibob_holiday, ayon_holiday)
                 ayon_holiday.set_processed()
+                updated_counter += 1
 
             # Just append multiintersection item to the end of queue
             elif not only_intersecting_with_multiple:
@@ -509,8 +517,21 @@ def sync_holidays():
         #   - they were not found in HiBob
         for ayon_holiday in ayon_user_holidays:
             if not ayon_holiday.processed:
+                removed_counter += 1
                 log.debug(f"Removing holiday {ayon_holiday}")
                 remove_holiday(ayon_holiday, planner_api)
+
+    parts = []
+    if created_counter:
+        parts.append(f"Created {created_counter}")
+    if updated_counter:
+        parts.append(f"Updated {updated_counter}")
+    if removed_counter:
+        parts.append(f"Removed {removed_counter}")
+    ending = " | ".join(parts) if parts else "No changes"
+    log.info(
+        f"Sync from HiBob to AYON finished. {ending}"
+    )
 
 
 def _cleanup_process():
@@ -558,8 +579,8 @@ def main():
     atexit.register(_cleanup_process)
 
     ayon_api.set_sender_type("hibob")
+    last_sync = 0
     try:
-        last_sync = 0
         while not _GlobalContext.stop_event.is_set():
             delta = time.time() - last_sync
             if delta < SYNC_DELTA:
