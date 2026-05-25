@@ -6,7 +6,6 @@ import collections
 import datetime
 import json
 import logging
-import os
 import signal
 import sys
 import threading
@@ -17,20 +16,14 @@ import arrow
 import ayon_api
 import requests
 
-from .planner_api import (
-    get_resources,
-    get_booking_events,
-    create_booking_event,
-    update_booking_event,
-    delete_booking_event,
-)
+from .planner_api import PlannerAPI
 
 # 10 minutes
 SYNC_DELTA = 60 * 10
 HIBOB_ID_KEY = "hibob_id"
 
 
-class MissingCredentialsError(Exception):
+class MissingInfoError(Exception):
     pass
 
 
@@ -107,7 +100,7 @@ class HolidayItem:
         return True
 
 
-def get_addon_version() -> str:
+def get_addon_versions() -> tuple[str, str | None]:
     """Find currently defined addon version in AYON server."""
     addon_name: str = ayon_api.get_service_addon_name()
     addon_version: str = ayon_api.get_service_addon_version()
@@ -117,11 +110,11 @@ def get_addon_version() -> str:
     if variant == "production":
         bundle_name = bundles.get("productionBundle")
         if not bundle_name:
-            return addon_version
+            return addon_version, None
     elif variant == "staging":
         bundle_name = bundles.get("stagingBundle")
         if not bundle_name:
-            return addon_version
+            return addon_version, None
     else:
         bundle_name = variant
 
@@ -134,18 +127,19 @@ def get_addon_version() -> str:
         None
     )
     if bundle is None:
-        return addon_version
+        return addon_version, None
 
-    version = bundle["addons"].get(addon_name)
+    addons = bundle["addons"]
+    version = addons.get(addon_name)
+    planner_version = addons.get("planner")
     if version:
-        return version
-    return addon_version
+        return version, planner_version
+    return addon_version, planner_version
 
 
-def get_addon_settings() -> dict[str, Any]:
+def get_addon_settings(addon_version: str) -> dict[str, Any]:
     addon_name: str = ayon_api.get_service_addon_name()
     variant: str = ayon_api.get_default_settings_variant()
-    addon_version: str = get_addon_version()
     return ayon_api.get_addon_settings(
         addon_name,
         addon_version,
@@ -236,7 +230,8 @@ def get_hibob_holidays(
 
 
 def get_ayon_holidays(
-    resource_id_by_email: dict[str, str]
+    resource_id_by_email: dict[str, str],
+    planner_api: PlannerAPI,
 ) -> dict[str, list[HolidayItem]]:
     email_by_resource_id = {
         resource_id: email
@@ -265,7 +260,7 @@ def get_ayon_holidays(
     start_date = now_date - datetime.timedelta(days=7)
     end_date = now_date + datetime.timedelta(days=365)
     while True:
-        events = get_booking_events(
+        events = planner_api.get_booking_events(
             start_time=start_date.isoformat(),
             end_time=end_date.isoformat(),
             event_types={"absence"},
@@ -304,9 +299,10 @@ def get_ayon_holidays(
 def create_new_holiday(
     hibob_holiday: HolidayItem,
     resource_id: str,
+    planner_api: PlannerAPI,
 ) -> HolidayItem:
     event_id = ayon_api.utils.create_entity_id()
-    create_booking_event(
+    planner_api.create_booking_event(
         start_time=hibob_holiday.start.isoformat(),
         end_time=hibob_holiday.end.isoformat(),
         label=hibob_holiday.name,
@@ -330,10 +326,11 @@ def create_new_holiday(
 def update_holiday(
     hibob_holiday: HolidayItem,
     ayon_holiday: HolidayItem,
+    planner_api: PlannerAPI,
 ) -> None:
     ayon_holiday.name = hibob_holiday.name
 
-    update_booking_event(
+    planner_api.update_booking_event(
         ayon_holiday.ayon_id,
         label=hibob_holiday.name,
         start_time=hibob_holiday.start.isoformat(),
@@ -346,20 +343,30 @@ def update_holiday(
 
 def remove_holiday(
     ayon_holiday: HolidayItem,
+    planner_api: PlannerAPI,
 ) -> None:
-    delete_booking_event(ayon_holiday.ayon_id)
+    planner_api.delete_booking_event(ayon_holiday.ayon_id)
 
 
 def sync_holidays():
     log = logging.getLogger("HiBobSync")
 
-    addon_settings = get_addon_settings()
+    addon_version, planner_version = get_addon_versions()
+    if not planner_version:
+        raise MissingInfoError(
+            "Failed to get planner version from AYON server. "
+            "Make sure that planner addon is defined in the bundle."
+        )
+
+    addon_settings = get_addon_settings(addon_version)
     hibob_user, hibob_api_key = get_hibob_credentials(addon_settings)
     if not hibob_user or not hibob_api_key:
-        raise MissingCredentialsError(
+        raise MissingInfoError(
             "Missing HiBob credentials. Please check your service"
             " credentials settings."
         )
+
+    planner_api = PlannerAPI(planner_version)
 
     # TODO use settings to load ignored policy types
     ignored_policy_types = []
@@ -380,7 +387,7 @@ def sync_holidays():
 
     resource_id_by_email: dict[str, str] = {}
 
-    for resource in get_resources(
+    for resource in planner_api.get_resources(
         resource_filter={
             "conditions": [
                 {
@@ -397,7 +404,7 @@ def sync_holidays():
             resource_id_by_email[email] = resource["id"]
 
     ayon_holidays: dict[str, list[HolidayItem]] = get_ayon_holidays(
-        resource_id_by_email
+        resource_id_by_email, planner_api
     )
 
     for email, hibob_holidays in hibob_holidays_by_email.items():
@@ -450,7 +457,9 @@ def sync_holidays():
                         f"Updating event name {hibob_holiday.name}"
                         f" -> {same_ayon_holiday.name}"
                     )
-                    update_holiday(hibob_holiday, same_ayon_holiday)
+                    update_holiday(
+                        hibob_holiday, same_ayon_holiday, planner_api
+                    )
                 same_ayon_holiday.set_processed()
 
             # Create new holiday item if none is intersecting
@@ -460,7 +469,7 @@ def sync_holidays():
                     f"Creating new holiday in AYON {hibob_holiday}"
                 )
                 ayon_holiday = create_new_holiday(
-                    hibob_holiday, resource_id
+                    hibob_holiday, resource_id, planner_api
                 )
                 ayon_user_holidays.append(ayon_holiday)
                 ayon_holiday.set_processed()
@@ -500,7 +509,7 @@ def sync_holidays():
         for ayon_holiday in ayon_user_holidays:
             if not ayon_holiday.processed:
                 log.debug(f"Removing holiday {ayon_holiday}")
-                remove_holiday(ayon_holiday)
+                remove_holiday(ayon_holiday, planner_api)
 
 
 def _cleanup_process():
@@ -558,13 +567,37 @@ def main():
 
             try:
                 sync_holidays()
-            except MissingCredentialsError as exc:
+            except MissingInfoError as exc:
                 log.error(str(exc))
 
             last_sync = time.time()
 
     finally:
         _cleanup_process()
+
+
+def main2():
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)-8s %(message)s",
+        level=logging.INFO,
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+    ayon_api.init_service(
+        token="d19acd90230d45db9f35acbb365acc48",
+        server_url="http://localhost:5000",
+        addon_name="planner",
+        addon_version="1.0.1-dev-5",
+    )
+
+    bundles = ayon_api.get_bundles()
+    for bundle in bundles["bundles"]:
+        print(bundle)
+
+
+    # username = "SERVICE-31520"
+    # api_key = "X1o1yL8L64SnSW7WT16WfzSTpZ3z4QkzTJEUgeD9"
+    # holidays = get_hibob_holidays(username, api_key)
+    # emails = set(holidays)
 
 
 if __name__ == "__main__":
