@@ -26,6 +26,7 @@ import io
 import shutil
 import argparse
 import platform
+from pathlib import Path
 import logging
 import collections
 import zipfile
@@ -37,6 +38,8 @@ import package
 ADDON_NAME: str = package.name
 ADDON_VERSION: str = package.version
 FTRACK_EVENT_HANDLERS_FILENAME = "hibob_event_handlers.tar.gz"
+SERVICE_IMAGE: str = package.services["ayon_sync"]["image"]
+SERVICE_IMAGE_NAME, SERVICE_IMAGE_VERSION = SERVICE_IMAGE.split(":")
 
 CURRENT_DIR: str = os.path.dirname(os.path.abspath(__file__))
 SERVER_DIR: str = os.path.join(CURRENT_DIR, "server")
@@ -276,9 +279,39 @@ def create_server_package(output_dir: str, log: logging.Logger):
     log.info(f"Output package can be found: {output_path}")
 
 
+def update_service_version():
+    """Update service version in package.py file."""
+    service_dir = Path(CURRENT_DIR) / "services" / "ayon_sync"
+    # docker-compose.yaml
+    docker_compose_path = service_dir / "docker-compose.yml"
+    new_lines = []
+    with open(docker_compose_path, "r") as stream:
+        for line in stream.readlines():
+            if SERVICE_IMAGE_NAME in line:
+                beginning, _ = line.split("image:", 1)
+                line = f"{beginning}image: {SERVICE_IMAGE}\n"
+            new_lines.append(line)
+
+    docker_compose_path.write_text("".join(new_lines))
+
+    # pyproject.toml
+    pyproject_path = service_dir / "pyproject.toml"
+    new_lines = []
+    version_found = False
+    with open(pyproject_path, "r") as stream:
+        for line in stream.readlines():
+            if not version_found and line.startswith("version"):
+                version_found = True
+                line = f"version = \"{SERVICE_IMAGE_VERSION}\"\n"
+
+            new_lines.append(line)
+
+    pyproject_path.write_text("".join(new_lines))
+
+
 def main(
-    output_dir: Optional[str]=None,
-    skip_zip: Optional[bool]=False,
+    output_dir: Optional[str] = None,
+    skip_zip: bool = False,
 ):
     log: logging.Logger = logging.getLogger("create_package")
 
@@ -286,6 +319,8 @@ def main(
         output_dir = os.path.join(CURRENT_DIR, "package")
 
     log.info("Start creating package")
+
+    update_service_version()
 
     # Skip server zipping
     if not skip_zip:

@@ -2,7 +2,12 @@ name = "hibob"
 title = "HiBob"
 version = "1.0.2-dev"
 
-ayon_required_addons = {
-    "ftrack": ">1.1.4"
+services = {
+    "ayon_sync": {"image": "ynput/ayon-hibob-sync:1.0.0"},
 }
-ayon_compatible_addons = {}
+
+ayon_required_addons = {}
+ayon_compatible_addons = {
+    "ftrack": ">1.1.4",
+    "planner": ">1.0.0",
+}
