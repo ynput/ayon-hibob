@@ -1,6 +1,6 @@
 name = "hibob"
 title = "HiBob"
-version = "1.1.2"
+version = "1.1.2+dev"
 
 services = {
     "ayon_sync": {"image": "ynput/ayon-hibob-sync:1.0.0"},
