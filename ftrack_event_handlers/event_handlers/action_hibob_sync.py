@@ -137,10 +137,12 @@ class SyncHiBobHolidaysAction(HiBobServerAction):
         all_ftrack_holidays = self.get_ftrack_holidays(
             session, user_email_by_id
         )
-        action_settings = self.get_my_settings(session, event, entities)
+        addon_settings = self.get_addon_settings(session, event, entities)
         ignored_policy_types = {
             policy_type.lower()
-            for policy_type in action_settings["ignored_policy_types"]
+            for policy_type in (
+                addon_settings["sync_config"]["ignored_policy_types"]
+            )
         }
         all_hibob_holidays = self.get_hibob_holidays(
             hibob_user, hibob_api, ignored_policy_types
