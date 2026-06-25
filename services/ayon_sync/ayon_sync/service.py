@@ -492,7 +492,9 @@ def sync_holidays():
                     "Updating holiday in AYON"
                     f" {ayon_holiday}->{hibob_holiday}"
                 )
-                update_holiday(hibob_holiday, ayon_holiday)
+                update_holiday(
+                    hibob_holiday, ayon_holiday, planner_api
+                )
                 ayon_holiday.set_processed()
                 updated_counter += 1
 
