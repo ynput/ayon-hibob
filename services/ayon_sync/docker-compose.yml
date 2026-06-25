@@ -2,7 +2,7 @@ name: ayon-hibob-services
 services:
   syncservice:
     container_name: ayon-hibob-sync
-    image: ynput/ayon-hibob-sync:1.0.0
+    image: ynput/ayon-hibob-sync:1.0.1
     restart: unless-stopped
     environment:
       - "AYON_SERVER_URL=${AYON_SERVER_URL}"
