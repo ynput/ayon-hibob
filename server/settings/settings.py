@@ -33,7 +33,6 @@ class SyncConfigModel(BaseSettingsModel):
     )
 
 
-
 class FtrackEventHandlersModel(BaseSettingsModel):
     SyncHiBobHolidaysAction: SyncHiBobHolidaysActionModel = SettingsField(
         title="Sync HiBob Holidays",

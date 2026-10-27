@@ -64,4 +64,3 @@ def get_hibob_icon_url(icon_name=None):
         addon_version=__version__,
         addon_name="hibob",
     )
-
