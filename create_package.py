@@ -18,22 +18,26 @@ if available.
 Package contains server side files directly,
 client side code zipped in `private` subfolder.
 """
+from __future__ import annotations
 
-import os
-import sys
-import re
-import io
-import shutil
 import argparse
+import collections
+import io
+import logging
+import os
 import platform
 from pathlib import Path
-import logging
-import collections
-import zipfile
+import re
+import shutil
+import sys
 import tarfile
-from typing import Optional, Pattern
+import typing
+import zipfile
 
 import package
+
+if typing.TYPE_CHECKING:
+    from typing import Pattern
 
 ADDON_NAME: str = package.name
 ADDON_VERSION: str = package.version
@@ -127,8 +131,8 @@ def _value_match_regexes(value: str, regexes: list[Pattern]) -> bool:
 
 def find_files_in_subdir(
     src_path: str,
-    ignore_file_patterns: Optional[list[Pattern]] = None,
-    ignore_dir_patterns: Optional[list[Pattern]] = None
+    ignore_file_patterns: list[Pattern] | None = None,
+    ignore_dir_patterns: list[Pattern] | None = None
 ) -> list[tuple[str, str]]:
     if ignore_file_patterns is None:
         ignore_file_patterns: list[Pattern] = IGNORE_FILE_PATTERNS
@@ -310,7 +314,7 @@ def update_service_version():
 
 
 def main(
-    output_dir: Optional[str] = None,
+    output_dir: str | None = None,
     skip_zip: bool = False,
 ):
     log: logging.Logger = logging.getLogger("create_package")
